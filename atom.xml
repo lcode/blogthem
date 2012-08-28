@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[MrZhang.me]]></title>
+  <link href="http://mrzhang.me/atom.xml" rel="self"/>
+  <link href="http://mrzhang.me/"/>
+  <updated>2012-01-20T00:00:00+08:00</updated>
+  <id>http://mrzhang.me/</id>
+  <author>
+    <name><![CDATA[wǒ_is神仙]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Hello, SeaJS!]]></title>
+    <link href="http://mrzhang.me/blog/hello-seajs.html"/>
+    <updated>2012-08-02T13:55:00+08:00</updated>
+    <id>http://mrzhang.me/blog/hello-seajs</id>
+    <content type="html"><![CDATA[<p>不知道这货是啥？那你就 OUT 啦～</p>
+<p>SeaJS 是一款适用于 Web 浏览器端的模块加载器，它同时又<a href='https://github.com/seajs/seajs/issues/275' target='_blank'>与 Node 兼容</a>。在 SeaJS 的世界里，一个文件就是一个模块，所有模块都遵循
+<a href='https://github.com/seajs/seajs/issues/242' target='_blank'>CMD（Common Module Definition）</a>
+规范。一个模块基本是长这样的：</p>
+<pre class='sh_javascript'><code>define(function(require, exports, module) {
+</code><code>  // Your codes here
+</code><code>});</code></pre>
+<h3>一、如何使用？</h3>
+<p>
+  <strong>Step1:</strong>
+  在页面引入 <code>sea.js</code>。为了让 <code>sea.js</code> 内部能快速获取到自身路径，推荐手动加上 <code>id</code> 属性：
+</p>
+<pre class='sh_javascript'><code>&lt;script src=&quot;http://path/to/seajs/1.2.0/sea.js&quot; id=&quot;seajsnode&quot;&gt;&lt;/script&gt;</code></pre>
+<p>
+  <strong>Step2:</strong>
+  使用 <code>seajs.use</code> 加载模块文件：
+</p>
+<pre class='sh_javascript'><code>&lt;script&gt;
+</code><code>seajs.use('./hello');
+</code><code>
+</code><code>// 可以带 callback
+</code><code>seajs.use('./hello', function(hello) {
+</code><code>  hello.api();
+</code><code>});
+</code><code>
+</code><code>// 也可同时（依次）加载多个模块
+</code><code>seajs.use(['./hello', './world'], function(hello, world) {
+</code><code>  hello.api();
+</code><code>  world.api();
+</code><code>});
+</code><code>&lt;/script&gt;</code></pre>
+<p>你应该已经注意到，被加载的模块文件都没带后缀，那是因为 SeaJS 默认会给没有指定后缀的自动补上 <code>.js</code> 后缀。但有两种情况是不会自动添加的，一是路径以井号 <code>#</code> 结尾，二是路径中含有问号 <code>?</code>。</p>
+<!-- more -->
+<a id='ContinueReading'></a>
+<h3>二、模块标识</h3>
+<p>模块标识是一个字符串，用来标识模块。上面提到的“路径”就是一种模块标识。模块标识和模块是一一对应的，可以理解为模块的唯一识别码。SeaJS 有三种模块标识：相对标识、顶级标识、普通路径。</p>
+<h4>1. 相对标识</h4>
+<p>相对标识以 <code>./</code> 或 <code>../</code> 开头，只出现在模块文件内。它永远相对当前模块的 URI 来解析。</p>
+<h4>2. 顶级标识</h4>
+<p>顶级标识不以 <code>.</code> 或 <code>/</code> 开始，它会相对 SeaJS 的 <code>base</code> 路径来解析。</p>
+<p>那这个 <code>base</code> 路径又是什么呢？它是通过 <code>sea.js</code> 的访问路径得到的，比如访问路径是 <code>http://path/to/seajs/1.2.0/sea.js</code>，那 <code>base</code> 路径就是 <code>http://path/to/</code>。</p>
+<h4>3. 普通路径</h4>
+<p>除了相对和顶级标识之外的标识都是普通路径。普通路径的解析规则，和 HTML 代码中的 <code>&lt;script src="..."&gt;&lt;/script&gt;</code> 一样，会相对当前页面解析。通过 <code>seajs.use</code> 加载的模块，除非使用了 <code>alias</code>，不然始终会以“普通路径”的规则来解析。</p>
+<h3>三、<code>seajs.config({})</code></h3>
+<p>
+  不能让用户配置的工具都不是好工具。SeaJS 具体有哪些配置项，可以参见
+  <a href='https://github.com/seajs/seajs/issues/262' target='_blank'>这里</a>
+  。
+</p>
+<p>需要说明的是，<code>seajs.config</code> 是可以多处调用的，同名 key 覆盖，不同名的 key 则叠加。这样就可以有全局配置和细分配置了。</p>
+<p>最最常用的配置项，要数 <code>alias</code> 了，它可以简化模块标识，还可以用作版本管理。如果配置的别名已经存在，SeaJS 会提示 <code>The alias config is conflicted: key="..." previous="..." current="..."</code>，表示别名冲突，那就需要人肉检查是否会影响其他模块了。</p>
+<pre class='sh_javascript'><code>seajs.config({
+</code><code>  alias: {
+</code><code>    'app': 'http://path/to/app',    // 普通路径
+</code><code>    'jquery': 'jquery/1.7.2/jquery' // 顶级标识
+</code><code>  }
+</code><code>});</code></pre>
+<p>SeaJS 从 v1.2.0 开始，类似上面 jQuery 的写法可以简化为 <code>{ 'jquery': '1.7.2' }</code>。</p>
+<h3>四、具体的模块文件如何写？</h3>
+<p>至此，你基本已经知道如何使用 SeaJS 了，下面讲讲模块文件。</p>
+<p>对于本文一开始告知的模块基本格式，我的建议是，不要做任何修改、赋值，不仅是 <code>define</code> 和 <code>require</code>，还包括 <code>exports</code> 和 <code>module</code>。</p>
+<p><code>require('模块标识')</code> 用来获取其他模块提供的接口。</p>
+<p><code>exports</code> 用来对外提供接口。</p>
+<p><code>module</code> 对象存储了与当前模块相关联的一些属性和方法。</p>
+<p>
+  更具体的规范介绍，参见
+  <a href='https://github.com/seajs/seajs/issues/242' target='_blank'>官方文档</a>
+  。
+</p>
+<p>其他代码你原来怎么写，现在还是怎么写。就这么简单。</p>
+<p>最后，恭喜，你已经入门了，尽情享受 SeaJS 吧～</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[jQuery Transition]]></title>
+    <link href="http://mrzhang.me/blog/jquery-transition.html"/>
+    <updated>2012-04-12T14:25:00+08:00</updated>
+    <id>http://mrzhang.me/blog/jquery-transition</id>
+    <content type="html"><![CDATA[<p>没错，这又是一款jQuery插件～</p>
+<p>先来看看它的语法：</p>
+<pre class='sh_javascript'><code>.transition( properties [, duration] [, easing] [, delay] [, complete] )
+</code><code>// Or
+</code><code>.transition( properties, options )</code></pre>
+<p>使用方法跟jQuery的<code>.animate()</code>是差不多的，很容易上手吧～源码在GitHub上，点右上角前往～</p>
+<p>本插件使用了Underscore的一些function，所以，如果你的项目中已经使用了它，那么请下载：</p>
+<ul>
+  <li><a href='https://github.com/downloads/jsw0528/Transition/jquery.transition.min.js' target='_blank'>jQuery.Transition.min.js</a>
+  (1.3K, gzipped)</li>
+  <li><a href='https://github.com/downloads/jsw0528/Transition/jquery.transition-with-fallback.min.js' target='_blank'>jQuery.Transition-with-fallback.min.js</a>
+  (1.9K, gzipped)</li>
+</ul>
+<p>否则：</p>
+<ul>
+  <li><a href='https://github.com/downloads/jsw0528/Transition/jquery.transition.pkg.js' target='_blank'>jQuery.Transition.pkg.js</a>
+  (1.8K, gzipped)</li>
+  <li><a href='https://github.com/downloads/jsw0528/Transition/jquery.transition-with-fallback.pkg.js' target='_blank'>jQuery.Transition-with-fallback.pkg.js</a>
+  (2.3K, gzipped)</li>
+</ul>
+<h3>温馨提示：</h3>
+<ol>
+  <li>默认动画是放进列队的，但可以通过传入参数<code>queue: false</code>取消之；</li>
+  <li>动画是可以通过<code>.stop()</code>方法使之停止的，具体看jQuery的<a href='http://api.jquery.com/stop' target='_blank'>文档</a>；</li>
+  <li><code>complete</code>回调内的<code>this</code>是指向当前DOM的；</li>
+  <li>可以使用全局方法<code>$.fx.off = true</code>关掉所有动画；</li>
+  <li>没有对CSS3 Transition的<code>steps</code>做fallback处理；</li>
+  <li>fallback只是说在不支持CSS3 Transition的浏览器中自动降级使用jQuery的<code>.animate()</code>，如果它不支持的话，比如CSS3 Transform、Color等，那还是没有动画效果的；</li>
+  <li>
+    想知道CSS3 Transition支持哪些CSS属性，<a href='http://www.w3.org/TR/css3-transitions/#animation-of-property-types-' target='_blank'>看这里</a>；想知道<code>.animate()</code>支持哪些CSS属性，<a href='http://api.jquery.com/animate/#animation-properties' target='_blank'>看这里</a>。
+  </li>
+</ol>
+<p>没什么要说的了，有问题请留言，下面直接上Demo。</p>
+<!-- more -->
+<a id='ContinueReading'></a>
+<div class='flash-notice'>
+  <div class='info'>
+    <strong>Tips:</strong>
+    把鼠标移到虚线框内看效果，单击可停止动画，双击继续动画。
+  </div>
+</div>
+<h4>Demo1：普通动画，跟.animate()一样，可使用“+=”和“-=”，单位也可省略</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this).transition({
+</code><code>  marginLeft: '+=100'
+</code><code>});</code></pre>
+<h4>Demo2：CSS3 Transform，单位不能省略</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this).transition({
+</code><code>  /* translate 跟 rotate 的顺序不一样，动画效果也是不一样的，这个自己试吧～ */
+</code><code>  transform: 'translate(500px, -50px) scale(1.5) rotate(360deg)'
+</code><code>  // transform: 'rotate(360deg) scale(1.5) translate(500px, -50px)'
+</code><code>});</code></pre>
+<h4>Demo3：CSS3 3D Transform(FF + WebKit)，动画持续1秒，easing为“linear”</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this).transition({
+</code><code>  transform: 'rotate3d(1, 2, 1, 180deg)'
+</code><code>}, '1s', 'linear');</code></pre>
+<h4>Demo4：Callbacks</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this).transition({ marginLeft: 200 }, function() {
+</code><code>  $(this).transition({ transform: 'scale(3)', opacity: 0 });
+</code><code>  // console.log(this);
+</code><code>});</code></pre>
+<h4>Demo5：Effect Queue</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this)
+</code><code>  .transition({ transform: 'translate(100px, -100px)' })
+</code><code>  .transition({ transform: 'translate(200px, 0)' }, { delay: '.5s' })
+</code><code>  .transition({ transform: 'translate(100px, 100px)' }, { delay: '.5s' })
+</code><code>  .transition({ transform: 'translate(0, 0)' }, { delay: '.5s' });</code></pre>
+<h4>Demo6：自定义Easing，使用Cubic-Bezier Curve</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>// 可定义的默认值
+</code><code>// $.fn.transition.defaults.delay = '0s';
+</code><code>// $.fn.transition.defaults.duration = '0.5s';
+</code><code>// $.fn.transition.defaults.queue = true;
+</code><code>
+</code><code>// 自定义easing
+</code><code>$.fn.transition.defaults.easing['customEasing'] = 'cubic-bezier(0.1, -0.5, 0.1, 1.5)';
+</code><code>
+</code><code>$('.box', this).transition({
+</code><code>  transform: 'translateX(200px)'
+</code><code>}, '0.5s', 'customEasing');</code></pre>
+<h4>Demo7：$.fn.css / $.support</h4>
+<div class='transition-demo'>
+  <div class='box'></div>
+</div>
+<pre class='sh_javascript'><code>$('.box', this).css({
+</code><code>  transformOrigin: '20px -10px',
+</code><code>  transform: 'rotate(45deg)'
+</code><code>});</code></pre>
+<p>在你当前正在使用的浏览器下，<strong>jQuery.Transition</strong>提供以下功能方法：</p>
+<pre class='sh_javascript'></pre>
+<pre class='sh_javascript'></pre>
+<a class='fork-me' href='https://github.com/jsw0528/Transition' target='_blank'>Fork Me On GitHub</a>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[jQuery Utilities vs Underscore]]></title>
+    <link href="http://mrzhang.me/blog/jquery-utilities-vs-underscore.html"/>
+    <updated>2012-03-26T15:50:00+08:00</updated>
+    <id>http://mrzhang.me/blog/jquery-utilities-vs-underscore</id>
+    <content type="html"><![CDATA[<p>抛开其他因素，只简单比较下各方法本身。能力有限，可能会有偏颇，望不吝赐教～</p>
+<p>jQuery版本是1.7.2，Underscore版本是1.3.1。</p>
+<h3>$.each() vs _.each()</h3>
+<p>两者都是用于遍历，使用方法也基本一样，不同之处是index和value的顺序不一样：<br />jQuery：<code>$.each(list, function(<strong>index, value</strong>) {})</code><br />Underscore：<code>_.each(list, function(<strong>value, index</strong>) {})</code></p>
+<p>后者优先使用了ECMAScript 5的原生<code>forEach</code>方法，性能上也就优于前者。</p>
+<h3>$.extend() vs _.extend()</h3>
+<p>功能类似，但前者支持深度合并，看例子：</p>
+<pre class='sh_javascript'><code>var obj1 = {
+</code><code>  name: 'wǒ_is神仙',
+</code><code>  site: {
+</code><code>    blog: 'http://MrZhang.me',
+</code><code>    engine: 'GitHub + Octopress'
+</code><code>  }
+</code><code>},
+</code><code>obj2 = {
+</code><code>  site: {
+</code><code>    weibo: 'http://weibo.com/jsw0528'
+</code><code>  }
+</code><code>};
+</code><code>
+</code><code>console.log( _.extend({}, obj1, obj2) );
+</code><code>//=&gt; { name: 'wǒ_is神仙', site: { weibo: 'http://weibo.com/jsw0528' } }
+</code><code>
+</code><code>console.log( $.extend({}, obj1, obj2) );
+</code><code>//=&gt; { name: 'wǒ_is神仙', site: { weibo: 'http://weibo.com/jsw0528' } }
+</code><code>
+</code><code>// 深度合并
+</code><code>console.log( $.extend(true, {}, obj1, obj2) );
+</code><code>//=&gt; { name: 'wǒ_is神仙', site: { blog: 'http://MrZhang.me', engine: 'GitHub + Octopress', weibo: 'http://weibo.com/jsw0528' } }</code></pre>
+<!-- more -->
+<a id='ContinueReading'></a>
+<h3>$.grep() vs _.filter() + _.reject()</h3>
+<p>这次是一对二，<code>$.grep()</code>第三个参数传入<code>true</code>时，就达到了<code>_.reject()</code>的效果。<code>_.filter()</code>优先使用了ECMAScript 5的原生<code>filter</code>方法。</p>
+<pre class='sh_javascript'><code>var arr = [1, 2, 3, 4, 5, 6],
+</code><code>    fn = function(num) { return num % 2 == 0 };
+</code><code>
+</code><code>console.log( _.filter(arr, fn) );
+</code><code>console.log( $.grep(arr, fn) );
+</code><code>//=&gt; [2, 4, 6]
+</code><code>
+</code><code>console.log( _.reject(arr, fn) );
+</code><code>console.log( $.grep(arr, fn, true) );
+</code><code>//=&gt; [1, 3, 5]</code></pre>
+<h3>$.inArray() vs _.indexOf()</h3>
+<p>两者都优先使用了ECMAScript 5的原生<code>indexOf</code>方法，他们的语法分别是：<br />jQuery：<code>$.inArray(value, array, <strong>[fromIndex]</strong>)</code><br />Underscore：<code>_.indexOf(array, value, <strong>[isSorted]</strong>) </code></p>
+<p>可见，除了value和array的位置不一样外，第三个参数也是不一样的。前者的<code>fromIndex</code>的是用于指定遍历的起始索引，后者的<code>isSorted</code>的是用于开启<a href='http://baike.baidu.com/view/1195050.htm' target='_blank'>二分查找法</a>功能。Underscore还有个相关的<code>_.lastIndexOf()</code>。</p>
+<h3>$.isArray() vs _.isArray()</h3>
+<p>这次两者的功能、代码都是一样的，那就没什么好说的了～</p>
+<h3>$.isFunction() vs _.isFunction()</h3>
+<p>同上～Next～</p>
+<h3>$.isNumeric() vs _.isNumber()</h3>
+<p>先看例子：</p>
+<pre class='sh_javascript'><code>console.log( $.isNumeric('-10') );
+</code><code>//=&gt; true
+</code><code>console.log( _.isNumber('-10') );
+</code><code>//=&gt; false
+</code><code>
+</code><code>console.log( $.isNumeric('0xFF') );
+</code><code>//=&gt; true
+</code><code>console.log( _.isNumber('0xFF') );
+</code><code>//=&gt; false
+</code><code>
+</code><code>console.log( $.isNumeric('8e5') );
+</code><code>//=&gt; true
+</code><code>console.log( _.isNumber('8e5') );
+</code><code>//=&gt; false
+</code><code>
+</code><code>console.log( $.isNumeric(NaN) );
+</code><code>//=&gt; false
+</code><code>console.log( _.isNumber(NaN) );
+</code><code>//=&gt; true
+</code><code>
+</code><code>console.log( $.isNumeric(Infinity) );
+</code><code>//=&gt; false
+</code><code>console.log( _.isNumber(Infinity) );
+</code><code>//=&gt; true
+</code><code>
+</code><code>console.log( $.isNumeric(+false) );
+</code><code>//=&gt; true
+</code><code>console.log( _.isNumber(+false) );
+</code><code>//=&gt; true
+</code><code>
+</code><code>console.log( $.isNumeric(null) );
+</code><code>//=&gt; false
+</code><code>console.log( _.isNumber(null) );
+</code><code>//=&gt; false
+</code><code>
+</code><code>console.log( $.isNumeric(undefined) );
+</code><code>//=&gt; false
+</code><code>console.log( _.isNumber(undefined) );
+</code><code>//=&gt; false</code></pre>
+<p>前者会先对传入的参数执行<code>parseFloat()</code>，所以前三组返回的都是<code>true</code>，然后执行<code>!isNaN()</code>，所以第四组就返回<code>false</code>，同时它还使用<code>isFinite()</code>，第五组就也返回<code>false</code>了。</p>
+<p>后者则是纯粹的类型判断：<code>Object.prototype.toString.call()</code>。</p>
+<h3>$.makeArray() vs _.toArray()</h3>
+<p>两者的区别在于，当传入的参数是Hash时，前者是直接将Hash作为数组的一个元素，而后者则是将Hash的values组成数组。</p>
+<pre class='sh_javascript'><code>var obj = {
+</code><code>  name: 'wǒ_is神仙',
+</code><code>  blog: 'http://MrZhang.me'
+</code><code>};
+</code><code>
+</code><code>console.log( $.makeArray(obj) );
+</code><code>//=&gt; [{ name: 'wǒ_is神仙', blog: 'http://MrZhang.me' }]
+</code><code>console.log( _.toArray(obj) );
+</code><code>//=&gt; ['wǒ_is神仙', 'http://MrZhang.me']</code></pre>
+<h3>$.map() vs _.map()</h3>
+<p>两者功能一致，也都返回数组，但后者优先使用ECMAScript 5的原生<code>map</code>方法，性能优于前者。</p>
+<h3>$.merge() vs _.union()</h3>
+<p>两者都是用于合并数组，不同之处在于：前者只接受两个参数，把第二个数组合并到第一个之后，将改变第一个数组，不去重，所以新第一个数组的元素的个数是先前两个数组的总和；后者接受任意个参数，去重，并返回新的数组，不改变先前的数组。</p>
+<pre class='sh_javascript'><code>console.log( $.merge([1, 2, 3], [101, 2, 1, 10]) );
+</code><code>//=&gt; [1, 2, 3, 101, 2, 1, 10]
+</code><code>
+</code><code>console.log( _.union([1, 2, 3], [101, 2, 1, 10], [2, 1]) );
+</code><code>//=&gt; [1, 2, 3, 101, 10]</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Blog = GitHub + Octopress]]></title>
+    <link href="http://mrzhang.me/blog/blog-equals-github-plus-octopress.html"/>
+    <updated>2012-03-09T18:15:00+08:00</updated>
+    <id>http://mrzhang.me/blog/blog-equals-github-plus-octopress</id>
+    <content type="html"><![CDATA[<p>最近有些同学让我分享我的博客主题，其实主题早已经放在GitHub上了。下面索性基于<a href='https://github.com/jsw0528/octopress/tree/mrzhang_me/' target='_blank'>我Fork的Octopress</a>，讲一下如何使用Octopress在GitHub上建博客。</p>
+<p>先来看看我的版本和原始版本的主要不同之处：</p>
+<div class='flash-notice'>
+  <div class='info'>
+    <strong>2012-04-13:</strong>
+    允许单篇文章独立引用CSS和JS，具体文件内容变动见commit
+    <a href='https://github.com/jsw0528/octopress/commit/0aa27bb1ab423dbebd89cf5ffe55f8a5c65d6244#diff-1' target='_blank'>0aa27bb</a>
+    和
+    <a href='https://github.com/jsw0528/octopress/commit/05fcdbfced318fa9909011d9eb7a33dd0f8792d1#diff-0' target='_blank'>05fcdbf</a>
+    。
+  </div>
+</div>
+<ol>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/.rvmrc' target='_blank'>.rvmrc</a>
+    <br />
+    改成使用我机子上装的Ruby版本（1.9.3），Octopress最低要求是1.9.2。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/Gemfile' target='_blank'>Gemfile</a>
+    <br />
+    把源改成ruby.taobao.org，去掉部分gem的版本号限制，咱都用最新的。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/Rakefile' target='_blank'>Rakefile</a>
+    <br />
+    用haml替换markdown（这个根据自己喜好来，只要是被支持的），时间改成东八区的，降低主题对custom目录的依赖。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/_config.yml' target='_blank'>_config.yml</a>
+    <br />
+    这里都是一些定制化的配置信息，比如日期格式、永久链接、新浪微博等。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/plugins/sh_js.rb' target='_blank'>plugins/sh_js.rb</a>
+    <br />
+    [新增] 代码高亮插件，具体介绍看：<a href='http://mrzhang.me/blog/using-shjs-for-jekyll.html' target='_blank'>Using SHJS for Jekyll</a>。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/plugins/tag_generator.rb' target='_blank'>plugins/tag_generator.rb</a>
+    <br />
+    [新增] 其实Jekyll是支持Tag的，只不过Octopress目前没有官方插件支持，所以我自己搞了个，支持中文。
+  </li>
+  <li>
+    <a href='https://github.com/jsw0528/octopress/blob/mrzhang_me/.themes/blog/' target='_blank'>.themes/blog/</a>
+    <br />
+    [新增] 这个就是我博客的主题了。
+  </li>
+</ol>
+<a id='ContinueReading'></a>
+<p><strong>OK，现在让我们正式开始。</strong></p>
+<!-- more -->
+<h3>Step1 - 在本机安装Octopress</h3>
+<p>首先，必须先在本机安装配置<a href='http://help.github.com/mac-set-up-git/' target='_blank'>Git</a>和<a href='https://rvm.beginrescueend.com/rvm/install/' target='_blank'>Ruby</a>，然后就是把Octopress源码从GitHub上拉下来：</p>
+<pre class='sh_commands'><code>git clone git://github.com/jsw0528/octopress.git</code></pre>
+<p>运行上面的代码后，你会看到：</p>
+<pre class='sh_'><code>Cloning into octopress...</code>
+<code>remote: Counting objects: 4103, done.</code>
+<code>remote: Compressing objects: 100% (1835/1835), done.</code>
+<code>remote: Total 4103 (delta 2341), reused 3556 (delta 1946)</code>
+<code>Receiving objects: 100% (4103/4103), 1.03 MiB | 316 KiB/s, done.</code>
+<code>Resolving deltas: 100% (2341/2341), done.</code></pre>
+<p>现在源码已经在你机子上了，继续：</p>
+<pre class='sh_commands'><code>cd octopress</code>
+<code>bundle install</code></pre>
+<p>至此，Octopress所需的环境已经搭建成功。</p>
+<h3>Step2 - 安装主题</h3>
+<p>由于我博客的主题以<code>submodule</code>的方式引入了我们前端团队的<a href='https://github.com/eDoctor/eDr_assets_Sass' target='_blank'>基础样式库</a>，所以需要进行下面两步，把样式库的文件全部拉下来：</p>
+<pre class='sh_commands'><code>git submodule init</code>
+<code>git submodule update</code></pre>
+<p>现在可以安装主题了，<code>blog</code>是主题名称。其实这步就是把<code>.themes/blog/</code>内的两个目录复制到项目根目录。</p>
+<pre class='sh_commands'><code>rake install['blog']</code></pre>
+<h3>Step3 - 连接GitHub Pages</h3>
+<p>首先，你得有一个GitHub的帐号，并且已经创建了一个新的Repository。如果你准备用自己的域名的话，Repository的名称可以随便取，不过正常人在正常情况下，一般都是以域名取名的^_^。如果你没有自己的域名，GitHub是提供二级域名使用的，但是你得把Repository取名为<code>你的帐号.github.com</code>，并且，部署的时候会占用你的<code>master</code>分支。</p>
+<p><strong>Tips：</strong></p>
+<ol>
+  <li>如果用自己的域名，记得把<code>source/CNAME</code>文件内的域名改成你的。还有把域名的A Record指向IP：<code>207.97.227.245</code>；</li>
+  <li>如果用GitHub提供的二级域名，记得把<code>source/CNAME</code>删掉；</li>
+</ol>
+<p>完成上述准备工作后，运行：</p>
+<pre class='sh_commands'><code>rake setup_github_pages</code></pre>
+<p>它会提示你输入有读写权限的Repository Url，这个在GitHub上可以找到。Url形如：<code>git@github.com:jsw0528/MrZhang.me.git</code>，其中，<code>jsw0528</code>是我的帐号，<code>MrZhang.me</code>是我的Repository的名称。</p>
+<h3>Step4 - 配置你的博客</h3>
+<p>所有配置项都在<code>_config.yml</code>文件内，用你喜欢的编辑器打开它，然后改成你的数据即可。</p>
+<h3>Step5 - 为备份posts做准备</h3>
+<p>数据备份很重要，我们可以把文章备份到另一个分支，比如<code>store</code>。在安装完主题后，系统会自动创建一个空目录<code>source/_posts</code>，以后创建的文章都会保存在这个目录内。我们先定位到该目录，然后初始化git（建议新开一个终端窗口，省得不停地切换目录）：</p>
+<pre class='sh_commands'><code>cd source/_posts/</code>
+<code>git init</code>
+<code>touch README.md</code>
+<code>git add *</code>
+<code>git commit -m 'first commit'</code>
+<code>git remote add origin git@github.com:[Username]/[Repository].git</code></pre>
+<p>commit即可，无需push，因为我们重点是要新建<code>store</code>分支。接下来我们创建并切换到<code>store</code>：</p>
+<pre class='sh_commands'><code>git checkout -b store</code></pre>
+<p>回到刚才的窗口，继续下面的步骤。</p>
+<p>git入门，推荐看下<a href='http://rogerdudler.github.com/git-guide/index.zh.html' target='_blank'>这篇文章</a>，小清新风格。当然，你也可以使用<a href='http://mac.github.com/' target='_blank'>GitHub for Mac</a>，备份的准备步骤如下：</p>
+<ol>
+  <li>把<code>source/_posts</code>目录拖到仓库列表界面的左下角，在弹出新建空仓库的确认框后点“Yes”；</li>
+  <li>双击进入这个仓库，切换到“Settings”项，填入<code>git@github.com:[Username]/[Repository].git</code>后点“Update Remote”；</li>
+  <li>回到仓库列表界面，点底部的刷新按钮，刷新成功后，列表上的<code>_posts</code>将换成你的仓库名；</li>
+  <li>随便创建一个文件，比如上面的<code>touch README.md</code>；</li>
+  <li>再次进入这个仓库，切换到“Changes”项，你会看到刚刚创建的文件了，点“Commit”按钮；</li>
+  <li>这个时候可以新建<code>store</code>分支了，点软件左下角的分支图标，输入<code>store</code>，回车。</li>
+</ol>
+<h3>Step6 - 创建一篇文章</h3>
+<p>码字时，我们可以先在本地起一个服务，预览无误后再部署。新开一个终端窗口（保证定位到项目根目录），运行：</p>
+<pre class='sh_commands'><code>rake preview</code></pre>
+<p>然后你就可以使用<code>http://localhost:4000</code>访问你的本地博客了。</p>
+<p>创建文章：</p>
+<pre class='sh_commands'><code>rake new_post['Hello World']</code></pre>
+<p>然后到<code>source/_posts</code>目录内找文件名形如<code>YYYY-MM-DD-hello-world.haml</code>的文件。用你喜欢的编辑器打开它，码字。</p>
+<p>如果你对<code>.themes/blog</code>内的主题文件做了改动，可以运行下面的命令更新：</p>
+<pre class='sh_commands'><code>rake update_source['blog']</code>
+<code>rake update_style['blog']</code></pre>
+<h3>Step7 - 部署</h3>
+<p>先把整个项目静态化，然后再部署到GitHub：</p>
+<pre class='sh_commands'><code>rake generate</code>
+<code>rake deploy</code></pre>
+<p>当你看到“Github Pages deploy complete”后，就表示你大功已成。Enjoy!</p>
+<p><strong>Tips：</strong>Octopress提供的所有<code>rake</code>方法，可以运行<code>rake -T</code>查看。</p>
+<h3>Step8 - 备份</h3>
+<p>回到<code>source/_posts</code>目录内，运行下面的命令把文章备份到GitHub上：</p>
+<pre class='sh_commands'><code>git add *.haml</code>
+<code>git commit -m 'backup posts'</code>
+<code>git push origin store</code></pre>
+<p>到此结束，希望对你有帮助。</p>
+<p>放弃臃肿的WP，投入Octopress的怀抱吧～像黑客一样写博客！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[寻找靠谱前端]]></title>
+    <link href="http://mrzhang.me/blog/find-kaopu-f2e-developers.html"/>
+    <updated>2012-03-02T17:48:00+08:00</updated>
+    <id>http://mrzhang.me/blog/find-kaopu-f2e-developers</id>
+    <content type="html"><![CDATA[<p>职位名称：<strong>前端工程师</strong></p>
+<p>工作内容：负责B/S应用项目的前端实现及性能优化。</p>
+<p>任职资格：</p>
+<ol>
+  <li>熟练编写结构良好、各浏览器兼容的CSS，语义化、符合W3C标准的HTML；</li>
+  <li>能够借助jQuery实现页面交互效果；</li>
+  <li>最好了解一门后端语言，如C#；</li>
+  <li>积极进取，关注前端动态，愿意并渴望通过各种途径提升自己的代码修养；</li>
+  <li>逻辑分析能力强，有良好的团队合作精神。</li>
+</ol>
+<p>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
+<p>职位名称：<strong>高级前端工程师</strong></p>
+<p>工作内容：</p>
+<ol>
+  <li>负责
+  <a href='http://www.edoctor.cn/about' target='_blank'>医道网</a>
+  的前端代码实现及性能优化。</li>
+  <li>新技术的研究和创新。</li>
+</ol>
+<p>任职资格：</p>
+<ol>
+  <li>熟练编写结构良好、各浏览器兼容的CSS，语义化、符合W3C标准的HTML；</li>
+  <li>熟练编写高性能的JavaScript，能够借助优秀工具（如jQuery、Underscore、SeaJS等）提高开发效率；</li>
+  <li>了解HTML5和CSS3，能够并乐于把它们优雅降级地运用在实际项目中；</li>
+  <li>注重用户体验，喜欢不断地重构，对可访问性有所了解；</li>
+  <li>积极进取，关注前端动态，愿意并渴望通过各种途径提升自己的代码修养；</li>
+  <li>逻辑分析能力强，有良好的团队合作精神。</li>
+</ol>
+<p id='Join-eDoctor'>~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
+<pre class='sh_'>如果遇到个会写代码的妹纸就赶紧娶了吧。
+1、长年专业的训练让她们能够理性思考，相信没有事件触发，暴怒的代码是不会运行的；
+2、她总是在思考自己在哪里出错了。遇事先从自己找原因；
+3、她坚信，世界是由懒人推进的，正因为有偷懒的想法，人类的科技才会发展。（via <a href="http://weibo.com/1671242737/yhF3NBHgk">@管轶栋</a>）</pre>
+<pre class='sh_'>你见过在fix bug跑通test case后会摆动左右两只剪刀手喊yeah的萝莉码婆吗？
+This is it。。。。
+你想吃码婆豆腐吗？
+Join eDoctor。。。。（via <a href="http://weibo.com/1655747731/yhKFgspAc">@有个梨UGlee</a>）</pre>
+<p>
+  <embed src="http://player.youku.com/player.php/sid/XMzcyNzE5NjQ4/v.swf" allowFullScreen="true" quality="high" width="480" height="400" align="middle" allowScriptAccess="always" type="application/x-shockwave-flash"></embed>
+  <img height='288' src='http://ww1.sinaimg.cn/bmiddle/639d23f1gw1dtmd5x92wkj.jpg' width='440' />
+  <img height='660' src='http://ww2.sinaimg.cn/bmiddle/639d23f1gw1dtgjc2whu1j.jpg' width='440' />
+  <img height='659' src='http://ww1.sinaimg.cn/bmiddle/639d23f1gw1dtmdne4m21j.jpg' width='440' />
+  <img height='330' src='http://ww1.sinaimg.cn/bmiddle/639d23f1gw1dtk8ujkj99j.jpg' width='440' />
+</p>
+<p>
+  <a href='http://weibo.com/aidanguan?is_pic=1&amp;is_video=1&amp;is_ori=1&amp;is_search=1' target='_blank'>More？猛击这里</a>
+</p>
+<p>有兴趣的同学请发简历或技术博客地址到邮箱：<a href='mailto:i@mrzhang.me'>i@mrzhang.me</a>，也可至新浪微博与我交流（地址见左上角）。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Using SHJS for Jekyll]]></title>
+    <link href="http://mrzhang.me/blog/using-shjs-for-jekyll.html"/>
+    <updated>2012-02-02T10:32:00+08:00</updated>
+    <id>http://mrzhang.me/blog/using-shjs-for-jekyll</id>
+    <content type="html"><![CDATA[<p>我不想用Octopress自带的代码高亮插件，所以自己写了个插件，借助
+<a href='http://shjs.sourceforge.net/' target='_blank'>SHJS</a>
+实现代码高亮。由于Haml的缩进问题，不得以把每行代码都用code标签包了下～</p>
+<p>使用方法：<code>{<span>%</span> sh [:lang] <span>%</span>} Your Codes Here {<span>%</span> endsh <span>%</span>}</code>，<code>[:lang]</code>可以省略，默认是<code>:js</code>。</p>
+<p>插件代码如下：</p>
+<pre class='sh_ruby'><code># To highlight source code in an HTML document using SHJS for Jekyll
+</code><code># (c) wǒ_is神仙 | http://MrZhang.me | MIT Licensed.
+</code><code>
+</code><code>require &quot;cgi&quot;
+</code><code>
+</code><code>module Jekyll
+</code><code>
+</code><code>  class SHJS &lt; Liquid::Block
+</code><code>
+</code><code>    def initialize(tag_name, markup, tokens)
+</code><code>      @lang = &quot;js&quot;
+</code><code>      if markup =~ /\s*:(\w+)/i
+</code><code>        @lang = $1
+</code><code>      end
+</code><code>      @lang = format_lang @lang
+</code><code>      super
+</code><code>    end
+</code><code>
+</code><code>    def render(context)
+</code><code>      source = &quot;&lt;pre class='sh_#{ @lang }'&gt;&quot;
+</code><code>      code = CGI.escapeHTML super.lstrip.rstrip
+</code><code>      code.lines.each do |line|
+</code><code>        source += &quot;&lt;code&gt;#{ line }&lt;/code&gt;&quot;
+</code><code>      end
+</code><code>      source += &quot;&lt;/pre&gt;&quot;
+</code><code>    end
+</code><code>
+</code><code>    def format_lang(lang)
+</code><code>      return &quot;javascript&quot; if lang == &quot;js&quot;
+</code><code>      return &quot;ruby&quot; if lang == &quot;ru&quot;
+</code><code>      lang
+</code><code>    end
+</code><code>
+</code><code>  end
+</code><code>
+</code><code>end
+</code><code>
+</code><code>Liquid::Template.register_tag(&quot;sh&quot;, Jekyll::SHJS)</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hello World]]></title>
+    <link href="http://mrzhang.me/blog/hello-world.html"/>
+    <updated>2012-01-20T19:22:00+08:00</updated>
+    <id>http://mrzhang.me/blog/hello-world</id>
+    <content type="html"><![CDATA[<p>停博两年多了，打算节后重新拾起。</p>
+<p>WP什么的弱爆了，现在直接上Octopress。挂GitHub上还免费，哈哈～其实这才是关键，哈哈～而且这里有我熟悉的Haml、Scss、Ruby。。。</p>
+<p>主题还没完工，明天没时间的话只能节后再搞了～</p>
+<p>后天回老家～大家春节快乐～</p>
+]]></content>
+  </entry>
+  
+</feed>
